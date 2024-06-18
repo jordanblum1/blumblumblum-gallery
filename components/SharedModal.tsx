@@ -11,10 +11,8 @@ import Image from "next/image";
 import { useState } from "react";
 import { useSwipeable } from "react-swipeable";
 import { variants } from "../utils/animationVariants";
-import downloadPhoto from "../utils/downloadPhoto";
 import { range } from "../utils/range";
 import type { ImageProps, SharedModalProps } from "../utils/types";
-import Twitter from "./Icons/Twitter";
 
 export default function SharedModal({
   index,
@@ -126,29 +124,7 @@ export default function SharedModal({
                   >
                     <ArrowTopRightOnSquareIcon className="h-5 w-5" />
                   </a>
-                ) : (
-                  <a
-                    href={`https://twitter.com/intent/tweet?text=Check%20out%20this%20pic%20from%20Next.js%20Conf!%0A%0Ahttps://nextjsconf-pics.vercel.app/p/${index}`}
-                    className="rounded-full bg-black/50 p-2 text-white/75 backdrop-blur-lg transition hover:bg-black/75 hover:text-white"
-                    target="_blank"
-                    title="Open fullsize version"
-                    rel="noreferrer"
-                  >
-                    <Twitter className="h-5 w-5" />
-                  </a>
-                )}
-                <button
-                  onClick={() =>
-                    downloadPhoto(
-                      `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/${currentImage.public_id}.${currentImage.format}`,
-                      `${index}.jpg`,
-                    )
-                  }
-                  className="rounded-full bg-black/50 p-2 text-white/75 backdrop-blur-lg transition hover:bg-black/75 hover:text-white"
-                  title="Download fullsize version"
-                >
-                  <ArrowDownTrayIcon className="h-5 w-5" />
-                </button>
+                ) : null}
               </div>
               <div className="absolute top-0 left-0 flex items-center gap-2 p-3 text-white">
                 <button
@@ -176,34 +152,30 @@ export default function SharedModal({
                     <motion.button
                       initial={{
                         width: "0%",
-                        x: `${Math.max((index - 1) * -100, 15 * -100)}%`,
                       }}
                       animate={{
-                        scale: id === index ? 1.25 : 1,
                         width: "100%",
-                        x: `${Math.max(index * -100, 15 * -100)}%`,
                       }}
                       exit={{ width: "0%" }}
-                      onClick={() => changePhotoId(id)}
                       key={id}
-                      className={`${
+                      className={`relative mx-1 flex-none overflow-hidden rounded-lg ${
                         id === index
-                          ? "z-20 rounded-md shadow shadow-black/50"
-                          : "z-10"
-                      } ${id === 0 ? "rounded-l-md" : ""} ${
-                        id === images.length - 1 ? "rounded-r-md" : ""
-                      } relative inline-block w-full shrink-0 transform-gpu overflow-hidden focus:outline-none`}
+                          ? "z-20 border-2 border-white"
+                          : "z-10 border-2 border-transparent"
+                      }`}
+                      style={{ aspectRatio: "3 / 2" }}
+                      onClick={() => changePhotoId(id)}
                     >
                       <Image
-                        alt="small photos on the bottom"
-                        width={180}
-                        height={120}
+                        alt=""
+                        src={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/c_fill,h_112,w_168/${public_id}.${format}`}
+                        width={168}
+                        height={112}
                         className={`${
                           id === index
                             ? "brightness-110 hover:brightness-110"
                             : "brightness-50 contrast-125 hover:brightness-75"
                         } h-full transform object-cover transition`}
-                        src={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/c_scale,w_180/${public_id}.${format}`}
                       />
                     </motion.button>
                   ))}
