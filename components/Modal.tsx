@@ -17,7 +17,7 @@ export default function Modal({
   const router = useRouter();
 
   const { photoId } = router.query;
-  let index = Number(photoId);
+  const index = Number(photoId);
 
   const [direction, setDirection] = useState(0);
   const [curIndex, setCurIndex] = useState(index);
@@ -44,14 +44,22 @@ export default function Modal({
   }
 
   useKeypress("ArrowRight", () => {
-    if (index + 1 < images.length) {
-      changePhotoId(index + 1);
+    const currentImage = images.find(img => img.id === index);
+    if (currentImage) {
+      const nextImage = images.find(img => img.navigationId === currentImage.navigationId + 1);
+      if (nextImage) {
+        changePhotoId(nextImage.id);
+      }
     }
   });
 
   useKeypress("ArrowLeft", () => {
-    if (index > 0) {
-      changePhotoId(index - 1);
+    const currentImage = images.find(img => img.id === index);
+    if (currentImage) {
+      const prevImage = images.find(img => img.navigationId === currentImage.navigationId - 1);
+      if (prevImage) {
+        changePhotoId(prevImage.id);
+      }
     }
   });
 

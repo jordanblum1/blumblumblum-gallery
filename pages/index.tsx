@@ -12,6 +12,15 @@ import getBase64ImageUrl from "../utils/generateBlurPlaceholder";
 import type { ImageProps } from "../utils/types";
 import { useLastViewedPhoto } from "../utils/useLastViewedPhoto";
 
+function shuffleArray<T>(array: T[]): T[] {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+}
+
 const Home: NextPage = ({ images }: { images: ImageProps[] }) => {
   const router = useRouter();
   const { photoId } = router.query;
@@ -104,37 +113,58 @@ const Home: NextPage = ({ images }: { images: ImageProps[] }) => {
 export default Home;
 
 export async function getStaticProps() {
-  const results = await cloudinary.v2.search
-    .expression(`folder:${process.env.CLOUDINARY_FOLDER}/*`)
-    .sort_by("public_id", "desc")
-    .max_results(400)
-    .execute();
-  let reducedResults: ImageProps[] = [];
+  try {
+    const results = await cloudinary.v2.search
+      .expression(`folder:${process.env.CLOUDINARY_FOLDER}/*`)
+      .sort_by("public_id", "desc")
+      .max_results(400)
+      .execute();
 
-  let i = 0;
-  for (let result of results.resources) {
-    reducedResults.push({
+    let reducedResults: ImageProps[] = [];
+    
+    // First, create array with sequential IDs and navigation order
+    reducedResults = results.resources.map((result, i) => ({
       id: i,
       height: result.height,
       width: result.width,
       public_id: result.public_id,
       format: result.format,
+      navigationId: i // Add navigationId for sequential navigation
+    }));
+
+    // Create a mapping of original positions before shuffling
+    const originalOrder = reducedResults.map((_, i) => i);
+    const shuffledOrder = shuffleArray(originalOrder);
+
+    // Create the randomized array while preserving IDs and navigation order
+    const randomizedResults = shuffledOrder.map(newIndex => ({
+      ...reducedResults[newIndex],
+      id: reducedResults[newIndex].id, // Preserve the original ID
+      navigationId: newIndex // Use the new position for navigation
+    }));
+
+    const blurImagePromises = randomizedResults.map((image: ImageProps) => {
+      return getBase64ImageUrl(image);
     });
-    i++;
+    const imagesWithBlurDataUrls = await Promise.all(blurImagePromises);
+
+    for (let i = 0; i < randomizedResults.length; i++) {
+      randomizedResults[i].blurDataUrl = imagesWithBlurDataUrls[i];
+    }
+
+    return {
+      props: {
+        images: randomizedResults,
+      },
+      revalidate: 3600, // Revalidate every hour (3600 seconds)
+    };
+  } catch (error) {
+    console.error('Error fetching images:', error);
+    return {
+      props: {
+        images: [],
+      },
+      revalidate: 3600,
+    };
   }
-
-  const blurImagePromises = results.resources.map((image: ImageProps) => {
-    return getBase64ImageUrl(image);
-  });
-  const imagesWithBlurDataUrls = await Promise.all(blurImagePromises);
-
-  for (let i = 0; i < reducedResults.length; i++) {
-    reducedResults[i].blurDataUrl = imagesWithBlurDataUrls[i];
-  }
-
-  return {
-    props: {
-      images: reducedResults,
-    },
-  };
 }

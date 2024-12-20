@@ -7,12 +7,30 @@ import {
 } from "@heroicons/react/24/outline";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSwipeable } from "react-swipeable";
-import { variants } from "../utils/animationVariants";
-import downloadPhoto from "../utils/downloadPhoto";
 import { range } from "../utils/range";
 import type { ImageProps, SharedModalProps } from "../utils/types";
+
+const variants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? '100%' : '-100%',
+    opacity: 0,
+    scale: 0.95
+  }),
+  center: {
+    zIndex: 1,
+    x: 0,
+    opacity: 1,
+    scale: 1
+  },
+  exit: (direction: number) => ({
+    zIndex: 0,
+    x: direction < 0 ? '100%' : '-100%',
+    opacity: 0,
+    scale: 0.95
+  })
+};
 
 export default function SharedModal({
   index,
@@ -24,38 +42,93 @@ export default function SharedModal({
   direction,
 }: SharedModalProps) {
   const [loaded, setLoaded] = useState(false);
+  const [dimensions, setDimensions] = useState({ width: 1280, height: 853 });
+  
   let filteredImages = images?.filter((img: ImageProps) =>
     range(index - 15, index + 15).includes(img.id),
   );
+
   const handlers = useSwipeable({
     onSwipedLeft: () => {
-      if (index < images?.length - 1) {
-        changePhotoId(index + 1);
+      const currentImage = images?.find(img => img.id === index);
+      if (currentImage) {
+        const nextImage = images?.find(img => img.navigationId === currentImage.navigationId + 1);
+        if (nextImage) {
+          changePhotoId(nextImage.id);
+        }
       }
     },
     onSwipedRight: () => {
-      if (index > 0) {
-        changePhotoId(index - 1);
+      const currentImage = images?.find(img => img.id === index);
+      if (currentImage) {
+        const prevImage = images?.find(img => img.navigationId === currentImage.navigationId - 1);
+        if (prevImage) {
+          changePhotoId(prevImage.id);
+        }
       }
     },
     trackMouse: true,
+    swipeDuration: 500,
+    preventScrollOnSwipe: true,
+    trackTouch: true
   });
-  let currentImage = images ? images[index] : currentPhoto;
+
+  let currentImage = images ? images.find(img => img.id === index) : currentPhoto;
+
+  useEffect(() => {
+    if (currentImage) {
+      const calculateDimensions = () => {
+        const maxWidth = Math.min(1280, window.innerWidth - 100);
+        const maxHeight = window.innerHeight - 100;
+        const imageWidth = Number(currentImage.width);
+        const imageHeight = Number(currentImage.height);
+        const ratio = imageWidth / imageHeight;
+
+        let width, height;
+
+        if (ratio > 1) {
+          // Landscape
+          width = Math.min(maxWidth, imageWidth);
+          height = width / ratio;
+        } else {
+          // Portrait
+          height = Math.min(maxHeight, imageHeight);
+          width = height * ratio;
+        }
+
+        setDimensions({
+          width: Math.round(width),
+          height: Math.round(height)
+        });
+      };
+
+      calculateDimensions();
+      window.addEventListener('resize', calculateDimensions);
+      
+      return () => window.removeEventListener('resize', calculateDimensions);
+    }
+  }, [currentImage]);
+
   return (
     <MotionConfig
       transition={{
-        x: { type: "spring", stiffness: 300, damping: 30 },
-        opacity: { duration: 0.2 },
+        x: { type: "spring", stiffness: 100, damping: 30 },
+        opacity: { duration: 0.4 },
+        scale: { duration: 0.4 },
       }}
     >
       <div
-        className="relative z-50 flex aspect-[3/2] w-full max-w-7xl items-center wide:h-full xl:taller-than-854:h-auto"
+        className="relative z-50 flex h-full max-h-screen w-full items-center justify-center"
         {...handlers}
       >
         {/* Main image */}
         <div className="w-full overflow-hidden">
-          <div className="relative flex aspect-[3/2] items-center justify-center">
-            <AnimatePresence initial={false} custom={direction}>
+          <div className="relative flex items-center justify-center">
+            <AnimatePresence
+              initial={false}
+              custom={direction}
+              mode="popLayout"
+            >
               <motion.div
                 key={index}
                 custom={direction}
@@ -63,29 +136,51 @@ export default function SharedModal({
                 initial="enter"
                 animate="center"
                 exit="exit"
-                className="absolute"
+                className="relative"
+                style={{
+                  width: dimensions.width,
+                  height: dimensions.height,
+                  margin: '0 auto',
+                  willChange: 'transform, opacity',
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  perspective: 1000,
+                  WebkitPerspective: 1000,
+                  transformStyle: 'preserve-3d',
+                  WebkitTransformStyle: 'preserve-3d'
+                }}
               >
                 <Image
                   src={`https://res.cloudinary.com/${
                     process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-                  }/image/upload/c_scale,${navigation ? "w_1280" : "w_1920"}/${
+                  }/image/upload/c_scale,w_${dimensions.width}/${
                     currentImage.public_id
                   }.${currentImage.format}`}
-                  width={navigation ? 1280 : 1920}
-                  height={navigation ? 853 : 1280}
+                  alt="Photo"
+                  className="rounded-lg"
+                  width={dimensions.width}
+                  height={dimensions.height}
                   priority
-                  alt="Next.js Conf image"
+                  style={{ 
+                    objectFit: 'contain',
+                    willChange: 'transform',
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                    transform: 'translateZ(0)',
+                    WebkitTransform: 'translateZ(0)'
+                  }}
                   onLoad={() => setLoaded(true)}
                 />
               </motion.div>
             </AnimatePresence>
           </div>
         </div>
+
         {/* Buttons + bottom nav bar */}
         <div className="absolute inset-0 mx-auto flex max-w-7xl items-center justify-center">
           {/* Buttons */}
           {loaded && (
-            <div className="relative aspect-[3/2] max-h-full w-full">
+            <div className="relative h-full w-full">
               {navigation && (
                 <>
                   {index > 0 && (
@@ -119,16 +214,7 @@ export default function SharedModal({
                   >
                     <ArrowTopRightOnSquareIcon className="h-5 w-5" />
                   </a>
-                ) : (
-                  <a
-                    href={`https://twitter.com/intent/tweet?text=Check%20out%20this%20pic%20from%20Next.js%20Conf!%0A%0Ahttps://nextjsconf-pics.vercel.app/p/${index}`}
-                    className="rounded-full bg-black/50 p-2 text-white/75 backdrop-blur-lg transition hover:bg-black/75 hover:text-white"
-                    target="_blank"
-                    title="Open fullsize version"
-                    rel="noreferrer"
-                  >
-                  </a>
-                )}
+                ) : null}
               </div>
               <div className="absolute top-0 left-0 flex items-center gap-2 p-3 text-white">
                 <button
