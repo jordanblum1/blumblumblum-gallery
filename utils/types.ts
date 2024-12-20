@@ -6,7 +6,7 @@ export type ImageProps = {
   public_id: string;
   format: string;
   blurDataUrl?: string;
-  navigationId: number;
+  navigationId?: number;
 };
 
 export interface SharedModalProps {

@@ -44,13 +44,14 @@ export default function SharedModal({
   const [loaded, setLoaded] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 1280, height: 853 });
   
+  let currentImage = images ? images.find(img => img.id === index) : currentPhoto;
+  
   let filteredImages = images?.filter((img: ImageProps) =>
-    range(index - 15, index + 15).includes(img.id),
-  );
+    range(currentImage?.navigationId - 15, currentImage?.navigationId + 15).includes(img.navigationId)
+  ).sort((a, b) => a.navigationId - b.navigationId);
 
   const handlers = useSwipeable({
     onSwipedLeft: () => {
-      const currentImage = images?.find(img => img.id === index);
       if (currentImage) {
         const nextImage = images?.find(img => img.navigationId === currentImage.navigationId + 1);
         if (nextImage) {
@@ -59,7 +60,6 @@ export default function SharedModal({
       }
     },
     onSwipedRight: () => {
-      const currentImage = images?.find(img => img.id === index);
       if (currentImage) {
         const prevImage = images?.find(img => img.navigationId === currentImage.navigationId - 1);
         if (prevImage) {
@@ -72,8 +72,6 @@ export default function SharedModal({
     preventScrollOnSwipe: true,
     trackTouch: true
   });
-
-  let currentImage = images ? images.find(img => img.id === index) : currentPhoto;
 
   useEffect(() => {
     if (currentImage) {
@@ -183,20 +181,26 @@ export default function SharedModal({
             <div className="relative h-full w-full">
               {navigation && (
                 <>
-                  {index > 0 && (
+                  {currentImage?.navigationId > 0 && (
                     <button
                       className="absolute left-3 top-[calc(50%-16px)] rounded-full bg-black/50 p-3 text-white/75 backdrop-blur-lg transition hover:bg-black/75 hover:text-white focus:outline-none"
                       style={{ transform: "translate3d(0, 0, 0)" }}
-                      onClick={() => changePhotoId(index - 1)}
+                      onClick={() => {
+                        const prevImage = images?.find(img => img.navigationId === currentImage.navigationId - 1);
+                        if (prevImage) changePhotoId(prevImage.id);
+                      }}
                     >
                       <ChevronLeftIcon className="h-6 w-6" />
                     </button>
                   )}
-                  {index + 1 < images.length && (
+                  {currentImage?.navigationId < (images?.length ?? 0) - 1 && (
                     <button
                       className="absolute right-3 top-[calc(50%-16px)] rounded-full bg-black/50 p-3 text-white/75 backdrop-blur-lg transition hover:bg-black/75 hover:text-white focus:outline-none"
                       style={{ transform: "translate3d(0, 0, 0)" }}
-                      onClick={() => changePhotoId(index + 1)}
+                      onClick={() => {
+                        const nextImage = images?.find(img => img.navigationId === currentImage.navigationId + 1);
+                        if (nextImage) changePhotoId(nextImage.id);
+                      }}
                     >
                       <ChevronRightIcon className="h-6 w-6" />
                     </button>
