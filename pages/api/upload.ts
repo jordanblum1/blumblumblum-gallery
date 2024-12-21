@@ -33,17 +33,22 @@ export default async function handler(
         { width: 2000, crop: "limit" },
         {
           overlay: { resource_type: "image", public_id: "JRB-logo-white_voqtow" },
-          gravity: "south_east",
-          x: 400,
-          y: 30,
-          width: 80,
-          opacity: 70
+          gravity: "south_west",
+          x: 50,
+          y: 45,
+          width: "0.03",
+          opacity: 70,
+          crop: "scale"
         },
         {
-          overlay: { font_family: "futura", font_size: 40, text: "JORDAN R BLUM" },
-          gravity: "south_east",
-          x: 60,
-          y: 45,
+          overlay: { 
+            font_family: "futura", 
+            text: "JORDAN R BLUM",
+            font_size: "140" 
+          },
+          gravity: "south",
+          x: -130,
+          y: 100,
           color: "white",
           opacity: 70
         }

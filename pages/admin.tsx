@@ -1,9 +1,15 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Head from 'next/head';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { TrashIcon } from '@heroicons/react/24/outline';
+import { 
+  TrashIcon, 
+  ArrowPathIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon 
+} from '@heroicons/react/24/outline';
+import imageCompression from 'browser-image-compression';
 import cloudinary from '../utils/cloudinary';
 import { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
@@ -27,6 +33,45 @@ interface AdminPageProps {
   initialImages: CloudinaryImage[];
 }
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+
+async function compressImage(file: File) {
+  const options = {
+    maxSizeMB: 9.5, // Slightly under 10MB to be safe
+    maxWidthOrHeight: 4000, // Reasonable max dimension
+    useWebWorker: true,
+    fileType: file.type,
+  };
+
+  try {
+    const compressedFile = await imageCompression(file, options);
+    return compressedFile;
+  } catch (error) {
+    console.error('Compression error:', error);
+    throw error;
+  }
+}
+
+const StatusIcon = ({ status }: { status: string }) => {
+  switch (status) {
+    case 'completed':
+      return <CheckCircleIcon className="h-5 w-5 text-green-400" />;
+    case 'error':
+      return <ExclamationCircleIcon className="h-5 w-5 text-red-400" />;
+    case 'uploading':
+      return (
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        >
+          <ArrowPathIcon className="h-5 w-5 text-white" />
+        </motion.div>
+      );
+    default:
+      return null;
+  }
+};
+
 export default function AdminPage({ initialImages = [] }: AdminPageProps) {
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -35,7 +80,38 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
   const [password, setPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState('');
+  const clearQueueTimeoutRef = useRef<NodeJS.Timeout>();
   const router = useRouter();
+
+  // Check authentication status on mount
+  useEffect(() => {
+    const checkAuth = () => {
+      const authData = localStorage.getItem('adminAuth');
+      if (authData) {
+        try {
+          const { timestamp } = JSON.parse(authData);
+          const thirtyMinutes = 30 * 60 * 1000; // 30 minutes in milliseconds
+          if (Date.now() - timestamp < thirtyMinutes) {
+            setIsAuthenticated(true);
+            // Refresh the timestamp
+            localStorage.setItem('adminAuth', JSON.stringify({ timestamp: Date.now() }));
+            return;
+          }
+        } catch (e) {
+          console.error('Error parsing auth data:', e);
+        }
+      }
+      // Clear invalid or expired auth data
+      localStorage.removeItem('adminAuth');
+      setIsAuthenticated(false);
+    };
+
+    checkAuth();
+    
+    // Set up an interval to check auth status every minute
+    const interval = setInterval(checkAuth, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +126,8 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
 
       if (response.ok) {
         setIsAuthenticated(true);
+        // Store auth state with timestamp
+        localStorage.setItem('adminAuth', JSON.stringify({ timestamp: Date.now() }));
         setError('');
       } else {
         setError('Invalid password');
@@ -58,6 +136,20 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
       setError('An error occurred');
     }
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminAuth');
+    setIsAuthenticated(false);
+  };
+
+  // Cleanup effect for the timeout
+  useEffect(() => {
+    return () => {
+      if (clearQueueTimeoutRef.current) {
+        clearTimeout(clearQueueTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const newFiles = acceptedFiles.map(file => ({
@@ -120,8 +212,40 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
           return newFiles;
         });
 
+        let fileToUpload = uploadingFiles[i].file;
+
+        // Check if file needs compression
+        if (fileToUpload.size > MAX_FILE_SIZE) {
+          try {
+            fileToUpload = await compressImage(fileToUpload);
+            
+            // Update the file size in the UI
+            setUploadingFiles(prev => {
+              const newFiles = [...prev];
+              newFiles[i] = { 
+                ...newFiles[i], 
+                file: fileToUpload,
+                status: 'uploading',
+                progress: 0 
+              };
+              return newFiles;
+            });
+          } catch (error) {
+            setUploadingFiles(prev => {
+              const newFiles = [...prev];
+              newFiles[i] = { 
+                ...newFiles[i], 
+                status: 'error', 
+                error: 'Failed to compress image'
+              };
+              return newFiles;
+            });
+            continue;
+          }
+        }
+
         const formData = new FormData();
-        formData.append('file', uploadingFiles[i].file);
+        formData.append('file', fileToUpload);
 
         try {
           const response = await fetch('/api/upload', {
@@ -154,6 +278,23 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
           });
         }
       }
+
+      // Clear the upload queue after a delay if all files are completed or errored
+      const allCompleted = uploadingFiles.every(file => 
+        file.status === 'completed' || file.status === 'error'
+      );
+      
+      if (allCompleted) {
+        // Clear any existing timeout
+        if (clearQueueTimeoutRef.current) {
+          clearTimeout(clearQueueTimeoutRef.current);
+        }
+        // Set new timeout
+        clearQueueTimeoutRef.current = setTimeout(() => {
+          setUploadingFiles([]);
+        }, 20000); // 20 seconds delay
+      }
+
     } finally {
       setIsProcessing(false);
     }
@@ -211,7 +352,7 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
               <p className="mt-1 text-gray-400">Upload and manage your gallery photos</p>
             </div>
             <button
-              onClick={() => setIsAuthenticated(false)}
+              onClick={handleLogout}
               className="rounded-lg bg-white/5 px-4 py-2 text-sm text-white/80 transition hover:bg-white/10"
             >
               Logout
@@ -266,27 +407,19 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
                             <div className="flex-grow min-w-0">
                               <div className="flex items-center justify-between">
                                 <span className="truncate text-sm text-white">{file.file.name}</span>
-                                <span className="ml-2 flex-shrink-0 text-xs text-gray-400">
-                                  {file.status === 'completed'
-                                    ? 'Completed'
-                                    : file.status === 'error'
-                                    ? 'Error'
-                                    : file.status === 'uploading'
-                                    ? 'Uploading...'
-                                    : 'Waiting'}
-                                </span>
+                                <div className="ml-2 flex items-center gap-2">
+                                  <StatusIcon status={file.status} />
+                                  <span className="flex-shrink-0 text-xs text-gray-400">
+                                    {file.status === 'completed'
+                                      ? 'Uploaded'
+                                      : file.status === 'error'
+                                      ? 'Failed'
+                                      : file.status === 'uploading'
+                                      ? 'Uploading...'
+                                      : 'Waiting'}
+                                  </span>
+                                </div>
                               </div>
-                              {file.status === 'uploading' && (
-                                <motion.div
-                                  className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-700"
-                                >
-                                  <motion.div
-                                    className="h-full bg-white"
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${file.progress}%` }}
-                                  />
-                                </motion.div>
-                              )}
                               {file.status === 'error' && (
                                 <p className="mt-1 text-xs text-red-400">{file.error}</p>
                               )}
