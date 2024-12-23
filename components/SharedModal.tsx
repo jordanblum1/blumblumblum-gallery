@@ -12,6 +12,21 @@ import { useSwipeable } from "react-swipeable";
 import { range } from "../utils/range";
 import type { ImageProps, SharedModalProps } from "../utils/types";
 
+// Preload component that loads images silently
+const ImagePreloader = ({ imageUrls }: { imageUrls: string[] }) => {
+  useEffect(() => {
+    imageUrls.forEach((url) => {
+      const img = document.createElement('img');
+      img.src = url;
+    });
+  }, [imageUrls]);
+  return null;
+};
+
+// Function to get image URL
+const getImageUrl = (image: ImageProps, width: number) => 
+  `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/c_scale,w_${width}/${image.public_id}.${image.format}`;
+
 const variants = {
   enter: (direction: number) => ({
     x: direction > 0 ? '100%' : '-100%',
@@ -45,6 +60,17 @@ export default function SharedModal({
   const [dimensions, setDimensions] = useState({ width: 1280, height: 853 });
   
   let currentImage = images ? images.find(img => img.id === index) : currentPhoto;
+  
+  // Get adjacent images for preloading
+  const getAdjacentImages = () => {
+    if (!currentImage || !images) return [];
+    
+    const prevImage = images.find(img => img.navigationId === currentImage.navigationId - 1);
+    const nextImage = images.find(img => img.navigationId === currentImage.navigationId + 1);
+    const adjacentImages = [prevImage, nextImage].filter(Boolean) as ImageProps[];
+    
+    return adjacentImages.map(img => getImageUrl(img, dimensions.width));
+  };
   
   let filteredImages = images?.filter((img: ImageProps) =>
     range(currentImage?.navigationId - 15, currentImage?.navigationId + 15).includes(img.navigationId)
@@ -115,6 +141,9 @@ export default function SharedModal({
         scale: { duration: 0.4 },
       }}
     >
+      {/* Preload adjacent images */}
+      <ImagePreloader imageUrls={getAdjacentImages()} />
+      
       <div
         className="relative z-50 flex h-full max-h-screen w-full items-center justify-center"
         {...handlers}
@@ -274,6 +303,8 @@ export default function SharedModal({
                             : "brightness-50 contrast-125 hover:brightness-75"
                         } h-full transform object-cover transition`}
                         src={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/c_scale,w_180/${public_id}.${format}`}
+                        loading={Math.abs(currentImage?.navigationId - id) <= 2 ? "eager" : "lazy"}
+                        priority={Math.abs(currentImage?.navigationId - id) <= 1}
                       />
                     </motion.button>
                   ))}
