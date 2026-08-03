@@ -7,50 +7,51 @@ import {
 } from "@heroicons/react/24/outline";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSwipeable } from "react-swipeable";
-import { range } from "../utils/range";
+import { fullSizeUrl, imageUrl } from "../utils/imageUrl";
 import type { ImageProps, SharedModalProps } from "../utils/types";
 
-// Preload component that loads images silently
+const STRIP_RADIUS = 15;
+
+// Preloads neighbor images so arrow navigation feels instant.
 const ImagePreloader = ({ imageUrls }: { imageUrls: string[] }) => {
   useEffect(() => {
     imageUrls.forEach((url) => {
-      const img = document.createElement('img');
+      const img = document.createElement("img");
       img.src = url;
     });
   }, [imageUrls]);
   return null;
 };
 
-// Function to get image URL
-const getImageUrl = (image: ImageProps, width: number) => 
-  `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/c_scale,w_${width}/${image.public_id}.${image.format}`;
-
 const variants = {
   enter: (direction: number) => ({
-    x: direction > 0 ? '100%' : '-100%',
+    x: direction > 0 ? "100%" : "-100%",
     opacity: 0,
-    scale: 0.95
+    scale: 0.95,
   }),
   center: {
     zIndex: 1,
     x: 0,
     opacity: 1,
-    scale: 1
+    scale: 1,
   },
   exit: (direction: number) => ({
     zIndex: 0,
-    x: direction < 0 ? '100%' : '-100%',
+    x: direction < 0 ? "100%" : "-100%",
     opacity: 0,
-    scale: 0.95
-  })
+    scale: 0.95,
+  }),
 };
 
+const chromeButton =
+  "rounded-full border border-[var(--hairline)] bg-[var(--panel)] p-2 text-[var(--ink-muted)] backdrop-blur-lg transition hover:border-[var(--ink-muted)] hover:text-[var(--ink)] focus:outline-none";
+
 export default function SharedModal({
-  index,
+  position,
   images,
-  changePhotoId,
+  goTo,
   closeModal,
   navigation,
   currentPhoto,
@@ -58,80 +59,55 @@ export default function SharedModal({
 }: SharedModalProps) {
   const [loaded, setLoaded] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 1280, height: 853 });
-  
-  let currentImage = images ? images.find(img => img.id === index) : currentPhoto;
-  
-  // Get adjacent images for preloading
-  const getAdjacentImages = () => {
-    if (!currentImage || !images) return [];
-    
-    const prevImage = images.find(img => img.navigationId === currentImage.navigationId - 1);
-    const nextImage = images.find(img => img.navigationId === currentImage.navigationId + 1);
-    const adjacentImages = [prevImage, nextImage].filter(Boolean) as ImageProps[];
-    
-    return adjacentImages.map(img => getImageUrl(img, dimensions.width));
-  };
-  
-  let filteredImages = images?.filter((img: ImageProps) =>
-    range(currentImage?.navigationId - 15, currentImage?.navigationId + 15).includes(img.navigationId)
-  ).sort((a, b) => a.navigationId - b.navigationId);
+
+  const currentImage = images ? images[position] : currentPhoto;
+
+  const neighborUrls = images
+    ? [images[position - 1], images[position + 1]]
+        .filter(Boolean)
+        .map((img: ImageProps) => imageUrl(img, dimensions.width))
+    : [];
+
+  const strip = images
+    ? images.slice(Math.max(0, position - STRIP_RADIUS), position + STRIP_RADIUS + 1)
+    : [];
+  const stripOffset = Math.min(position, STRIP_RADIUS);
 
   const handlers = useSwipeable({
-    onSwipedLeft: () => {
-      if (currentImage) {
-        const nextImage = images?.find(img => img.navigationId === currentImage.navigationId + 1);
-        if (nextImage) {
-          changePhotoId(nextImage.id);
-        }
-      }
-    },
-    onSwipedRight: () => {
-      if (currentImage) {
-        const prevImage = images?.find(img => img.navigationId === currentImage.navigationId - 1);
-        if (prevImage) {
-          changePhotoId(prevImage.id);
-        }
-      }
-    },
+    onSwipedLeft: () => navigation && goTo(position + 1),
+    onSwipedRight: () => navigation && goTo(position - 1),
     trackMouse: true,
     swipeDuration: 500,
     preventScrollOnSwipe: true,
-    trackTouch: true
+    trackTouch: true,
   });
 
   useEffect(() => {
-    if (currentImage) {
-      const calculateDimensions = () => {
-        const maxWidth = Math.min(1280, window.innerWidth - 100);
-        const maxHeight = window.innerHeight - 100;
-        const imageWidth = Number(currentImage.width);
-        const imageHeight = Number(currentImage.height);
-        const ratio = imageWidth / imageHeight;
+    if (!currentImage) return;
+    const calculateDimensions = () => {
+      const maxWidth = Math.min(1280, window.innerWidth - 100);
+      const maxHeight = window.innerHeight - 100;
+      const ratio = Number(currentImage.width) / Number(currentImage.height);
 
-        let width, height;
+      let width: number;
+      let height: number;
+      if (ratio > 1) {
+        width = Math.min(maxWidth, Number(currentImage.width));
+        height = width / ratio;
+      } else {
+        height = Math.min(maxHeight, Number(currentImage.height));
+        width = height * ratio;
+      }
 
-        if (ratio > 1) {
-          // Landscape
-          width = Math.min(maxWidth, imageWidth);
-          height = width / ratio;
-        } else {
-          // Portrait
-          height = Math.min(maxHeight, imageHeight);
-          width = height * ratio;
-        }
+      setDimensions({ width: Math.round(width), height: Math.round(height) });
+    };
 
-        setDimensions({
-          width: Math.round(width),
-          height: Math.round(height)
-        });
-      };
-
-      calculateDimensions();
-      window.addEventListener('resize', calculateDimensions);
-      
-      return () => window.removeEventListener('resize', calculateDimensions);
-    }
+    calculateDimensions();
+    window.addEventListener("resize", calculateDimensions);
+    return () => window.removeEventListener("resize", calculateDimensions);
   }, [currentImage]);
+
+  if (!currentImage) return null;
 
   return (
     <MotionConfig
@@ -141,9 +117,8 @@ export default function SharedModal({
         scale: { duration: 0.4 },
       }}
     >
-      {/* Preload adjacent images */}
-      <ImagePreloader imageUrls={getAdjacentImages()} />
-      
+      <ImagePreloader imageUrls={neighborUrls} />
+
       <div
         className="relative z-50 flex h-full max-h-screen w-full items-center justify-center"
         {...handlers}
@@ -151,13 +126,9 @@ export default function SharedModal({
         {/* Main image */}
         <div className="w-full overflow-hidden">
           <div className="relative flex items-center justify-center">
-            <AnimatePresence
-              initial={false}
-              custom={direction}
-              mode="popLayout"
-            >
+            <AnimatePresence initial={false} custom={direction} mode="popLayout">
               <motion.div
-                key={index}
+                key={currentImage.id}
                 custom={direction}
                 variants={variants}
                 initial="enter"
@@ -167,35 +138,18 @@ export default function SharedModal({
                 style={{
                   width: dimensions.width,
                   height: dimensions.height,
-                  margin: '0 auto',
-                  willChange: 'transform, opacity',
-                  backfaceVisibility: 'hidden',
-                  WebkitBackfaceVisibility: 'hidden',
-                  perspective: 1000,
-                  WebkitPerspective: 1000,
-                  transformStyle: 'preserve-3d',
-                  WebkitTransformStyle: 'preserve-3d'
+                  margin: "0 auto",
+                  willChange: "transform, opacity",
                 }}
               >
                 <Image
-                  src={`https://res.cloudinary.com/${
-                    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-                  }/image/upload/c_scale,w_${dimensions.width}/${
-                    currentImage.public_id
-                  }.${currentImage.format}`}
-                  alt="Photo"
+                  src={imageUrl(currentImage, dimensions.width)}
+                  alt="Photograph by Jordan Blum"
                   className="rounded-lg"
                   width={dimensions.width}
                   height={dimensions.height}
                   priority
-                  style={{ 
-                    objectFit: 'contain',
-                    willChange: 'transform',
-                    backfaceVisibility: 'hidden',
-                    WebkitBackfaceVisibility: 'hidden',
-                    transform: 'translateZ(0)',
-                    WebkitTransform: 'translateZ(0)'
-                  }}
+                  style={{ objectFit: "contain" }}
                   onLoad={() => setLoaded(true)}
                 />
               </motion.div>
@@ -203,57 +157,47 @@ export default function SharedModal({
           </div>
         </div>
 
-        {/* Buttons + bottom nav bar */}
+        {/* Chrome */}
         <div className="absolute inset-0 mx-auto flex max-w-7xl items-center justify-center">
-          {/* Buttons */}
           {loaded && (
             <div className="relative h-full w-full">
               {navigation && (
                 <>
-                  {currentImage?.navigationId > 0 && (
+                  {position > 0 && (
                     <button
-                      className="absolute left-3 top-[calc(50%-16px)] rounded-full bg-black/50 p-3 text-white/75 backdrop-blur-lg transition hover:bg-black/75 hover:text-white focus:outline-none"
+                      className={`absolute left-3 top-[calc(50%-16px)] p-3 ${chromeButton}`}
                       style={{ transform: "translate3d(0, 0, 0)" }}
-                      onClick={() => {
-                        const prevImage = images?.find(img => img.navigationId === currentImage.navigationId - 1);
-                        if (prevImage) changePhotoId(prevImage.id);
-                      }}
+                      onClick={() => goTo(position - 1)}
                     >
                       <ChevronLeftIcon className="h-6 w-6" />
                     </button>
                   )}
-                  {currentImage?.navigationId < (images?.length ?? 0) - 1 && (
+                  {position < (images?.length ?? 0) - 1 && (
                     <button
-                      className="absolute right-3 top-[calc(50%-16px)] rounded-full bg-black/50 p-3 text-white/75 backdrop-blur-lg transition hover:bg-black/75 hover:text-white focus:outline-none"
+                      className={`absolute right-3 top-[calc(50%-16px)] p-3 ${chromeButton}`}
                       style={{ transform: "translate3d(0, 0, 0)" }}
-                      onClick={() => {
-                        const nextImage = images?.find(img => img.navigationId === currentImage.navigationId + 1);
-                        if (nextImage) changePhotoId(nextImage.id);
-                      }}
+                      onClick={() => goTo(position + 1)}
                     >
                       <ChevronRightIcon className="h-6 w-6" />
                     </button>
                   )}
                 </>
               )}
-              <div className="absolute top-0 right-0 flex items-center gap-2 p-3 text-white">
-                {navigation ? (
+              <div className="absolute top-0 right-0 flex items-center gap-2 p-3">
+                {navigation && (
                   <a
-                    href={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/${currentImage.public_id}.${currentImage.format}`}
-                    className="rounded-full bg-black/50 p-2 text-white/75 backdrop-blur-lg transition hover:bg-black/75 hover:text-white"
+                    href={fullSizeUrl(currentImage)}
+                    className={chromeButton}
                     target="_blank"
                     title="Open fullsize version"
                     rel="noreferrer"
                   >
                     <ArrowTopRightOnSquareIcon className="h-5 w-5" />
                   </a>
-                ) : null}
+                )}
               </div>
-              <div className="absolute top-0 left-0 flex items-center gap-2 p-3 text-white">
-                <button
-                  onClick={() => closeModal()}
-                  className="rounded-full bg-black/50 p-2 text-white/75 backdrop-blur-lg transition hover:bg-black/75 hover:text-white"
-                >
+              <div className="absolute top-0 left-0 flex items-center gap-2 p-3">
+                <button onClick={() => closeModal()} className={chromeButton}>
                   {navigation ? (
                     <XMarkIcon className="h-5 w-5" />
                   ) : (
@@ -263,7 +207,8 @@ export default function SharedModal({
               </div>
             </div>
           )}
-          {/* Bottom Nav bar */}
+
+          {/* Bottom thumbnail strip */}
           {navigation && (
             <div className="fixed inset-x-0 bottom-0 z-40 overflow-hidden bg-gradient-to-b from-black/0 to-black/60">
               <motion.div
@@ -271,43 +216,43 @@ export default function SharedModal({
                 className="mx-auto mt-6 mb-6 flex aspect-[3/2] h-14"
               >
                 <AnimatePresence initial={false}>
-                  {filteredImages.map(({ public_id, format, id }) => (
-                    <motion.button
-                      initial={{
-                        width: "0%",
-                        x: `${Math.max((index - 1) * -100, 15 * -100)}%`,
-                      }}
-                      animate={{
-                        scale: id === index ? 1.25 : 1,
-                        width: "100%",
-                        x: `${Math.max(index * -100, 15 * -100)}%`,
-                      }}
-                      exit={{ width: "0%" }}
-                      onClick={() => changePhotoId(id)}
-                      key={id}
-                      className={`${
-                        id === index
-                          ? "z-20 rounded-md shadow shadow-black/50"
-                          : "z-10"
-                      } ${id === 0 ? "rounded-l-md" : ""} ${
-                        id === images.length - 1 ? "rounded-r-md" : ""
-                      } relative inline-block w-full shrink-0 transform-gpu overflow-hidden focus:outline-none`}
-                    >
-                      <Image
-                        alt="small photos on the bottom"
-                        width={180}
-                        height={120}
+                  {strip.map((image, i) => {
+                    const imagePosition = position - stripOffset + i;
+                    const isCurrent = imagePosition === position;
+                    return (
+                      <motion.button
+                        initial={{
+                          width: "0%",
+                          x: `${Math.max((stripOffset - 1) * -100, STRIP_RADIUS * -100)}%`,
+                        }}
+                        animate={{
+                          scale: isCurrent ? 1.25 : 1,
+                          width: "100%",
+                          x: `${stripOffset * -100}%`,
+                        }}
+                        exit={{ width: "0%" }}
+                        onClick={() => goTo(imagePosition)}
+                        key={image.id}
                         className={`${
-                          id === index
-                            ? "brightness-110 hover:brightness-110"
-                            : "brightness-50 contrast-125 hover:brightness-75"
-                        } h-full transform object-cover transition`}
-                        src={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/c_scale,w_180/${public_id}.${format}`}
-                        loading={Math.abs(currentImage?.navigationId - id) <= 2 ? "eager" : "lazy"}
-                        priority={Math.abs(currentImage?.navigationId - id) <= 1}
-                      />
-                    </motion.button>
-                  ))}
+                          isCurrent ? "z-20 rounded-md shadow shadow-black/50" : "z-10"
+                        } relative inline-block w-full shrink-0 transform-gpu overflow-hidden focus:outline-none`}
+                      >
+                        <Image
+                          alt="Thumbnail"
+                          width={180}
+                          height={120}
+                          className={`${
+                            isCurrent
+                              ? "brightness-110 hover:brightness-110"
+                              : "brightness-50 contrast-125 hover:brightness-75"
+                          } h-full transform object-cover transition`}
+                          src={imageUrl(image, 180)}
+                          loading={Math.abs(imagePosition - position) <= 2 ? "eager" : "lazy"}
+                          priority={Math.abs(imagePosition - position) <= 1}
+                        />
+                      </motion.button>
+                    );
+                  })}
                 </AnimatePresence>
               </motion.div>
             </div>

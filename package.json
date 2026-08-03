@@ -4,7 +4,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint pages components utils tests",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.4",
@@ -14,8 +16,6 @@
     "eslint-config-next": "^13.0.1",
     "formidable": "^3.5.4",
     "framer-motion": "^7.6.4",
-    "imagemin": "^8.0.1",
-    "imagemin-jpegtran": "^7.0.0",
     "next": "latest",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -33,6 +33,7 @@
     "prettier": "^2.7.1",
     "prettier-plugin-tailwindcss": "^0.1.13",
     "tailwindcss": "^3.2.1",
-    "typescript": "4.8.4"
+    "typescript": "4.8.4",
+    "vitest": "^4.1.10"
   }
 }

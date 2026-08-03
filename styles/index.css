@@ -2,6 +2,101 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Brand tokens — darkroom values from the shared blum brand book
+   (blumblumblum.com data-darkroom palette + jordanrblum.com motion). */
+:root {
+  --paper: #160f0d;
+  --paper-raised: #241816;
+  --ink: #f7e8dc;
+  --ink-muted: #c9aea3;
+  --hairline: #5b3b34;
+  --accent: #e6533d;
+  --panel: rgb(36 24 22 / 0.94);
+  --veil: rgb(22 15 13 / 0.72);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration-fast: 140ms;
+  --duration-default: 220ms;
+}
+
+@font-face {
+  font-family: "Switzer";
+  src: url("/fonts/switzer-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Switzer";
+  src: url("/fonts/switzer-500.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Switzer", "Avenir Next", "Segoe UI", sans-serif;
+  letter-spacing: -0.012em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.mono-meta {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Prints develop in as they enter the viewport (see useDevelopIn). */
+.develop {
+  opacity: 0;
+  transform: translateY(10px);
+  filter: blur(6px) brightness(0.7);
+  transition:
+    opacity 420ms var(--ease),
+    transform 420ms var(--ease),
+    filter 600ms var(--ease);
+}
+
+.develop.is-developed {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* Welcome card on the gallery wall. */
+.intro-panel {
+  background: var(--panel);
+  outline: 1px solid var(--hairline);
+  box-shadow: 0 2px 3px rgb(0 0 0 / 0.3), 0 16px 42px rgb(0 0 0 / 0.4);
+}
+
+.intro-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    120% 90% at 50% 0%,
+    rgb(230 83 61 / 0.14),
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+::selection {
+  background: rgb(230 83 61 / 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .develop {
+    transition-duration: 0.01ms;
+  }
+}
+
 @supports (font: -apple-system-body) and (-webkit-appearance: none) {
   img[loading="lazy"] {
     clip-path: inset(0.6px);

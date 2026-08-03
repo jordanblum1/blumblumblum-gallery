@@ -6,6 +6,21 @@ class MyDocument extends Document {
       <Html lang="en">
         <Head>
           <link rel="icon" href="/favicon.ico" />
+          <link
+            rel="preload"
+            href="/fonts/switzer-400.woff2"
+            as="font"
+            type="font/woff2"
+            crossOrigin="anonymous"
+          />
+          <link
+            rel="preload"
+            href="/fonts/switzer-500.woff2"
+            as="font"
+            type="font/woff2"
+            crossOrigin="anonymous"
+          />
+          <meta name="theme-color" content="#160f0d" />
           <meta
             name="description"
             content="A gallery of photos by Jordan Blum."
@@ -23,7 +38,7 @@ class MyDocument extends Document {
             content="A gallery of photos by Jordan Blum."
           />
         </Head>
-        <body className="bg-black antialiased">
+        <body>
           <Main />
           <NextScript />
         </body>

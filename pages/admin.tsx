@@ -57,14 +57,14 @@ const StatusIcon = ({ status }: { status: string }) => {
     case 'completed':
       return <CheckCircleIcon className="h-5 w-5 text-green-400" />;
     case 'error':
-      return <ExclamationCircleIcon className="h-5 w-5 text-red-400" />;
+      return <ExclamationCircleIcon className="h-5 w-5 text-[var(--accent)]" />;
     case 'uploading':
       return (
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         >
-          <ArrowPathIcon className="h-5 w-5 text-white" />
+          <ArrowPathIcon className="h-5 w-5 text-[var(--ink)]" />
         </motion.div>
       );
     default:
@@ -302,15 +302,18 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
 
   if (!isAuthenticated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-gray-900 to-black">
-        <div className="w-full max-w-md rounded-2xl bg-gray-900/50 p-8 backdrop-blur-xl">
+      <div className="flex min-h-screen items-center justify-center bg-[var(--paper)]">
+        <div className="w-full max-w-md rounded-[1.5rem] border border-[var(--hairline)] bg-[var(--panel)] p-8">
           <div className="mb-8 text-center">
-            <h1 className="mb-2 text-3xl font-bold text-white">Admin Access</h1>
-            <p className="text-gray-400">Enter your password to manage photos</p>
+            <p className="mono-meta mb-3 text-[var(--accent)]">darkroom · admin</p>
+            <h1 className="mb-2 text-3xl font-medium tracking-[-0.04em] text-[var(--ink)]">
+              Admin Access
+            </h1>
+            <p className="text-[var(--ink-muted)]">Enter your password to manage photos</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
+              <label htmlFor="password" className="block text-sm font-medium text-[var(--ink-muted)]">
                 Password
               </label>
               <input
@@ -318,18 +321,18 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-gray-600 bg-gray-800/50 px-4 py-2 text-white shadow-sm backdrop-blur-sm transition focus:border-white focus:outline-none focus:ring-1 focus:ring-white"
+                className="mt-1 block w-full rounded-lg border border-[var(--hairline)] bg-[var(--paper)] px-4 py-2 text-[var(--ink)] transition focus:border-[var(--accent)] focus:outline-none"
                 required
               />
             </div>
             {error && (
-              <div className="rounded-md bg-red-500/10 p-3">
-                <p className="text-sm text-red-400">{error}</p>
+              <div className="rounded-md bg-[var(--accent)]/10 p-3">
+                <p className="text-sm text-[var(--accent)]">{error}</p>
               </div>
             )}
             <button
               type="submit"
-              className="w-full rounded-lg bg-white/10 px-4 py-2.5 text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/20 focus:ring-offset-2 focus:ring-offset-gray-900"
+              className="w-full rounded-lg bg-[var(--accent)] px-4 py-2.5 font-medium text-[var(--paper)] transition hover:brightness-110 focus:outline-none"
             >
               Login
             </button>
@@ -344,16 +347,19 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
       <Head>
         <title>Admin - Photo Upload</title>
       </Head>
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black p-8">
+      <div className="min-h-screen bg-[var(--paper)] p-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white">Photo Management</h1>
-              <p className="mt-1 text-gray-400">Upload and manage your gallery photos</p>
+              <p className="mono-meta mb-2 text-[var(--accent)]">darkroom · admin</p>
+              <h1 className="text-3xl font-medium tracking-[-0.04em] text-[var(--ink)]">
+                Photo Management
+              </h1>
+              <p className="mt-1 text-[var(--ink-muted)]">Upload and manage your gallery photos</p>
             </div>
             <button
               onClick={handleLogout}
-              className="rounded-lg bg-white/5 px-4 py-2 text-sm text-white/80 transition hover:bg-white/10"
+              className="rounded-full border border-[var(--hairline)] px-4 py-2 text-sm text-[var(--ink-muted)] transition hover:border-[var(--ink-muted)] hover:text-[var(--ink)]"
             >
               Logout
             </button>
@@ -364,34 +370,36 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
               <div className="space-y-6">
                 <div 
                   {...getRootProps()} 
-                  className={`cursor-pointer rounded-xl border-2 border-dashed border-gray-600 bg-gray-900/50 p-8 text-center transition-colors backdrop-blur-sm ${
-                    isDragActive ? 'border-white bg-gray-800/50' : 'hover:border-gray-500 hover:bg-gray-800/30'
+                  className={`cursor-pointer rounded-[1.25rem] border-2 border-dashed p-8 text-center transition-colors ${
+                    isDragActive
+                      ? 'border-[var(--accent)] bg-[var(--paper-raised)]'
+                      : 'border-[var(--hairline)] bg-[var(--panel)] hover:border-[var(--ink-muted)]'
                   }`}
                 >
                   <input {...getInputProps()} />
                   <div className="space-y-2">
-                    <div className="mx-auto w-12 text-gray-400">
+                    <div className="mx-auto w-12 text-[var(--ink-muted)]">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                       </svg>
                     </div>
-                    <p className="text-gray-300">
+                    <p className="text-[var(--ink)]">
                       {isDragActive
                         ? "Drop the files here..."
                         : "Drag 'n' drop photos here, or click to select"}
                     </p>
-                    <p className="text-sm text-gray-500">Supported: JPG, PNG, WebP</p>
+                    <p className="text-sm text-[var(--ink-muted)]">Supported: JPG, PNG, WebP</p>
                   </div>
                 </div>
 
                 {uploadingFiles.length > 0 && (
-                  <div className="space-y-4 rounded-xl bg-gray-900/50 p-4 backdrop-blur-sm">
-                    <h3 className="text-sm font-medium text-gray-300">Upload Queue</h3>
+                  <div className="space-y-4 rounded-[1.25rem] border border-[var(--hairline)] bg-[var(--panel)] p-4">
+                    <h3 className="mono-meta">Upload Queue</h3>
                     <div className="space-y-3">
                       {uploadingFiles.map((file, index) => (
                         <div
                           key={file.file.name + index}
-                          className="rounded-lg bg-gray-800/50 p-3"
+                          className="rounded-lg bg-[var(--paper-raised)] p-3"
                         >
                           <div className="flex items-center space-x-4">
                             {file.preview && (
@@ -406,10 +414,10 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
                             )}
                             <div className="flex-grow min-w-0">
                               <div className="flex items-center justify-between">
-                                <span className="truncate text-sm text-white">{file.file.name}</span>
+                                <span className="truncate text-sm text-[var(--ink)]">{file.file.name}</span>
                                 <div className="ml-2 flex items-center gap-2">
                                   <StatusIcon status={file.status} />
-                                  <span className="flex-shrink-0 text-xs text-gray-400">
+                                  <span className="flex-shrink-0 text-xs text-[var(--ink-muted)]">
                                     {file.status === 'completed'
                                       ? 'Uploaded'
                                       : file.status === 'error'
@@ -421,7 +429,7 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
                                 </div>
                               </div>
                               {file.status === 'error' && (
-                                <p className="mt-1 text-xs text-red-400">{file.error}</p>
+                                <p className="mt-1 text-xs text-[var(--accent)]">{file.error}</p>
                               )}
                             </div>
                           </div>
@@ -432,10 +440,10 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
                     <button
                       onClick={handleUpload}
                       disabled={isProcessing || uploadingFiles.length === 0}
-                      className={`w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors ${
+                      className={`w-full rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
                         isProcessing || uploadingFiles.length === 0
-                          ? 'bg-gray-700 cursor-not-allowed'
-                          : 'bg-white/10 hover:bg-white/20'
+                          ? 'cursor-not-allowed bg-[var(--paper-raised)] text-[var(--ink-muted)]'
+                          : 'bg-[var(--accent)] text-[var(--paper)] hover:brightness-110'
                       }`}
                     >
                       {isProcessing ? 'Processing...' : 'Upload All'}
@@ -447,22 +455,22 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
 
             <div className="col-span-2 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-white">Gallery Photos</h2>
-                <p className="text-sm text-gray-400">{images?.length} photos</p>
+                <h2 className="text-xl font-medium text-[var(--ink)]">Gallery Photos</h2>
+                <p className="mono-meta">{images?.length} photos</p>
               </div>
-              <div className="h-[75vh] space-y-2 overflow-y-auto rounded-xl bg-gray-900/50 p-4 backdrop-blur-sm">
+              <div className="h-[75vh] space-y-2 overflow-y-auto rounded-[1.25rem] border border-[var(--hairline)] bg-[var(--panel)] p-4">
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {images?.length === 0 ? (
-                    <p className="col-span-full text-center text-gray-500">No photos uploaded yet</p>
+                    <p className="col-span-full text-center text-[var(--ink-muted)]">No photos uploaded yet</p>
                   ) : (
                     images?.map((image) => (
                       <div
                         key={image.public_id}
-                        className="group relative overflow-hidden rounded-lg bg-gray-800/50 p-2"
+                        className="group relative overflow-hidden rounded-lg bg-[var(--paper-raised)] p-2"
                       >
                         <div className="relative aspect-[3/2] overflow-hidden rounded-md">
                           <Image
-                            src={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/c_fill,w_400,h_300/${image.public_id}.${image.format}`}
+                            src={`https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/c_fill,w_400,h_300,f_auto,q_auto/${image.public_id}.${image.format}`}
                             alt={image.public_id.split('/').pop() || 'Gallery photo'}
                             width={400}
                             height={300}
@@ -471,13 +479,13 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 opacity-0 transition group-hover:opacity-100" />
                         </div>
                         <div className="mt-2 flex items-center justify-between">
-                          <span className="truncate text-sm text-gray-300">
+                          <span className="truncate text-sm text-[var(--ink-muted)]">
                             {image.public_id.split('/').pop()}
                           </span>
                           <button
                             onClick={() => handleDelete(image.public_id)}
                             disabled={isDeleting === image.public_id}
-                            className={`rounded p-1 text-red-400 transition-colors hover:bg-red-500/10 ${
+                            className={`rounded p-1 text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10 ${
                               isDeleting === image.public_id ? 'cursor-not-allowed opacity-50' : ''
                             }`}
                           >

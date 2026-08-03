@@ -6,6 +6,8 @@ import useKeypress from "react-use-keypress";
 import type { ImageProps } from "../utils/types";
 import SharedModal from "./SharedModal";
 
+// `images` arrives in display (wall) order; a photo's stable id is what /p/
+// links and the ?photoId= query use. Arrows walk the wall order.
 export default function Modal({
   images,
   onClose,
@@ -13,55 +15,30 @@ export default function Modal({
   images: ImageProps[];
   onClose?: () => void;
 }) {
-  let overlayRef = useRef();
+  const overlayRef = useRef();
   const router = useRouter();
 
-  const { photoId } = router.query;
-  const index = Number(photoId);
-
+  const [curId, setCurId] = useState(Number(router.query.photoId));
   const [direction, setDirection] = useState(0);
-  const [curIndex, setCurIndex] = useState(index);
+  const position = images.findIndex((img) => img.id === curId);
 
   function handleClose() {
     router.push("/", undefined, { shallow: true });
     onClose();
   }
 
-  function changePhotoId(newVal: number) {
-    if (newVal > index) {
-      setDirection(1);
-    } else {
-      setDirection(-1);
-    }
-    setCurIndex(newVal);
-    router.push(
-      {
-        query: { photoId: newVal },
-      },
-      `/p/${newVal}`,
-      { shallow: true },
-    );
+  function goTo(newPosition: number) {
+    const image = images[newPosition];
+    if (!image) return;
+    setDirection(newPosition > position ? 1 : -1);
+    setCurId(image.id);
+    router.push({ query: { photoId: image.id } }, `/p/${image.id}`, {
+      shallow: true,
+    });
   }
 
-  useKeypress("ArrowRight", () => {
-    const currentImage = images.find(img => img.id === index);
-    if (currentImage) {
-      const nextImage = images.find(img => img.navigationId === currentImage.navigationId + 1);
-      if (nextImage) {
-        changePhotoId(nextImage.id);
-      }
-    }
-  });
-
-  useKeypress("ArrowLeft", () => {
-    const currentImage = images.find(img => img.id === index);
-    if (currentImage) {
-      const prevImage = images.find(img => img.navigationId === currentImage.navigationId - 1);
-      if (prevImage) {
-        changePhotoId(prevImage.id);
-      }
-    }
-  });
+  useKeypress("ArrowRight", () => goTo(position + 1));
+  useKeypress("ArrowLeft", () => goTo(position - 1));
 
   return (
     <Dialog
@@ -75,15 +52,15 @@ export default function Modal({
         ref={overlayRef}
         as={motion.div}
         key="backdrop"
-        className="fixed inset-0 z-30 bg-black/70 backdrop-blur-2xl"
+        className="fixed inset-0 z-30 bg-[var(--veil)] backdrop-blur-2xl"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       />
       <SharedModal
-        index={curIndex}
+        position={position}
         direction={direction}
         images={images}
-        changePhotoId={changePhotoId}
+        goTo={goTo}
         closeModal={handleClose}
         navigation={true}
       />
