@@ -33,14 +33,18 @@ interface AdminPageProps {
   initialImages: CloudinaryImage[];
 }
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+// Every upload is squeezed to a web master before it leaves the browser —
+// the gallery serves nothing larger than 2560px, so storing more is waste.
+const MAX_DIMENSION = 2560;
+const MAX_SIZE_MB = 4;
 
 async function compressImage(file: File) {
   const options = {
-    maxSizeMB: 9.5, // Slightly under 10MB to be safe
-    maxWidthOrHeight: 4000, // Reasonable max dimension
+    maxSizeMB: MAX_SIZE_MB,
+    maxWidthOrHeight: MAX_DIMENSION,
+    initialQuality: 0.85,
     useWebWorker: true,
-    fileType: file.type,
+    fileType: 'image/jpeg',
   };
 
   try {
@@ -214,34 +218,31 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
 
         let fileToUpload = uploadingFiles[i].file;
 
-        // Check if file needs compression
-        if (fileToUpload.size > MAX_FILE_SIZE) {
-          try {
-            fileToUpload = await compressImage(fileToUpload);
-            
-            // Update the file size in the UI
-            setUploadingFiles(prev => {
-              const newFiles = [...prev];
-              newFiles[i] = { 
-                ...newFiles[i], 
-                file: fileToUpload,
-                status: 'uploading',
-                progress: 0 
-              };
-              return newFiles;
-            });
-          } catch (error) {
-            setUploadingFiles(prev => {
-              const newFiles = [...prev];
-              newFiles[i] = { 
-                ...newFiles[i], 
-                status: 'error', 
-                error: 'Failed to compress image'
-              };
-              return newFiles;
-            });
-            continue;
-          }
+        try {
+          fileToUpload = await compressImage(fileToUpload);
+
+          // Update the file size in the UI
+          setUploadingFiles(prev => {
+            const newFiles = [...prev];
+            newFiles[i] = {
+              ...newFiles[i],
+              file: fileToUpload,
+              status: 'uploading',
+              progress: 0
+            };
+            return newFiles;
+          });
+        } catch (error) {
+          setUploadingFiles(prev => {
+            const newFiles = [...prev];
+            newFiles[i] = {
+              ...newFiles[i],
+              status: 'error',
+              error: 'Failed to compress image'
+            };
+            return newFiles;
+          });
+          continue;
         }
 
         const formData = new FormData();

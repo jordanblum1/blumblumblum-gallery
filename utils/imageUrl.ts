@@ -12,8 +12,10 @@ export function imageUrl(
   return `${BASE}/${transform}/${image.public_id}.${image.format}`;
 }
 
+// "Fullsize" is deliberately the 2560px web master, not the raw original —
+// nobody should be pulling multi-MB masters off the CDN.
 export function fullSizeUrl(
   image: Pick<ImageProps, "public_id" | "format">,
 ): string {
-  return `${BASE}/${image.public_id}.${image.format}`;
+  return `${BASE}/c_limit,w_2560,f_auto,q_auto/${image.public_id}.${image.format}`;
 }

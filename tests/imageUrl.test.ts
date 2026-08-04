@@ -31,9 +31,9 @@ describe("imageUrl", () => {
 });
 
 describe("fullSizeUrl", () => {
-  it("builds an untransformed URL", () => {
+  it("caps the web master at 2560px with automatic format and quality", () => {
     expect(fullSizeUrl(image)).toBe(
-      "https://res.cloudinary.com/testcloud/image/upload/photo0042_wl8woa.jpg",
+      "https://res.cloudinary.com/testcloud/image/upload/c_limit,w_2560,f_auto,q_auto/photo0042_wl8woa.jpg",
     );
   });
 });

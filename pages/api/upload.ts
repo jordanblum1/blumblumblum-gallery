@@ -26,11 +26,14 @@ export default async function handler(
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    // Upload to Cloudinary with watermark and text
+    // Upload to Cloudinary with watermark and text. The stored master is a
+    // web-optimized 2560px jpg — the gallery never serves anything larger.
     const result = await cloudinary.v2.uploader.upload(file.filepath, {
       folder: process.env.CLOUDINARY_FOLDER,
+      format: "jpg",
       transformation: [
-        { width: 2000, crop: "limit" },
+        { width: 2560, crop: "limit" },
+        { quality: "auto:good" },
         {
           overlay: { resource_type: "image", public_id: "JRB-logo-white_voqtow" },
           gravity: "south_west",
