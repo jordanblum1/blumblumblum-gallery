@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import formidable from 'formidable';
+import { isAuthorized } from '../../utils/adminAuth';
 import cloudinary from '../../utils/cloudinary';
 import fs from 'fs';
 
@@ -15,6 +16,10 @@ export default async function handler(
 ) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
+  }
+
+  if (!isAuthorized(req)) {
+    return res.status(401).json({ message: 'Unauthorized' });
   }
 
   try {

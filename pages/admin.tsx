@@ -486,6 +486,7 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
                           <button
                             onClick={() => handleDelete(image.public_id)}
                             disabled={isDeleting === image.public_id}
+                            aria-label={`Delete ${image.public_id.split('/').pop()}`}
                             className={`rounded p-1 text-[var(--accent)] transition-colors hover:bg-[var(--accent)]/10 ${
                               isDeleting === image.public_id ? 'cursor-not-allowed opacity-50' : ''
                             }`}

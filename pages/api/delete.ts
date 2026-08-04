@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import { isAuthorized } from '../../utils/adminAuth';
 import cloudinary from '../../utils/cloudinary';
 
 export default async function handler(
@@ -7,6 +8,10 @@ export default async function handler(
 ) {
   if (req.method !== 'DELETE') {
     return res.status(405).json({ message: 'Method not allowed' });
+  }
+
+  if (!isAuthorized(req)) {
+    return res.status(401).json({ message: 'Unauthorized' });
   }
 
   const { public_id } = req.query;
