@@ -13,7 +13,17 @@ import { shuffle } from "../utils/shuffle";
 import { useDevelopIn } from "../utils/useDevelopIn";
 import { useLastViewedPhoto } from "../utils/useLastViewedPhoto";
 
-const Home: NextPage = ({ images }: { images: ImageProps[] }) => {
+// Social preview falls back to the logo when Cloudinary is unreachable, so the
+// tag is always a real image — it previously pointed at the site URL.
+const FALLBACK_OG_IMAGE = "https://blumblumblum.com/gallery/BLUM-Tag-Logo.png";
+
+const Home: NextPage = ({
+  images,
+  ogImage,
+}: {
+  images: ImageProps[];
+  ogImage: string;
+}) => {
   const router = useRouter();
   const { photoId } = router.query;
   const [lastViewedPhoto, setLastViewedPhoto] = useLastViewedPhoto();
@@ -33,7 +43,10 @@ const Home: NextPage = ({ images }: { images: ImageProps[] }) => {
     <>
       <Head>
         <title>Jordan Blum&apos;s Photo Gallery</title>
-        <meta property="og:image" content="https://blumblumblum.com" />
+        <meta property="og:image" content={ogImage} />
+        {/* The app also answers on its .vercel.app origin behind CloudFront,
+            so point crawlers at the public URL regardless of which host served. */}
+        <link rel="canonical" href="https://blumblumblum.com/gallery" />
       </Head>
       <main ref={galleryRef} className="mx-auto max-w-[1960px] p-4">
         {photoId && (
@@ -142,13 +155,18 @@ export async function getStaticProps() {
     });
 
     return {
-      props: { images },
+      // ordered[0] is the newest photo and is stable across revalidates, unlike
+      // the shuffled `images` — a shuffled pick would churn the preview hourly.
+      props: {
+        images,
+        ogImage: ordered.length ? imageUrl(ordered[0], 1200) : FALLBACK_OG_IMAGE,
+      },
       revalidate: 3600,
     };
   } catch (error) {
     console.error("Error fetching images:", error);
     return {
-      props: { images: [] },
+      props: { images: [], ogImage: FALLBACK_OG_IMAGE },
       revalidate: 3600,
     };
   }

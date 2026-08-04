@@ -16,6 +16,10 @@ const PhotoPage: NextPage = ({ currentPhoto }: { currentPhoto: ImageProps }) => 
         <title>Jordan Blum&apos;s Photo Gallery</title>
         <meta property="og:image" content={currentPhotoUrl} />
         <meta name="twitter:image" content={currentPhotoUrl} />
+        <link
+          rel="canonical"
+          href={`https://blumblumblum.com/gallery/p/${currentPhoto.id}`}
+        />
       </Head>
       <main className="mx-auto max-w-[1960px] p-4">
         <Carousel currentPhoto={currentPhoto} />
