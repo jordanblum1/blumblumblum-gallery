@@ -120,7 +120,7 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/admin-auth', {
+      const response = await fetch(`${router.basePath}/api/admin-auth`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -187,7 +187,7 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
     
     setIsDeleting(publicId);
     try {
-      const response = await fetch(`/api/delete?public_id=${encodeURIComponent(publicId)}`, {
+      const response = await fetch(`${router.basePath}/api/delete?public_id=${encodeURIComponent(publicId)}`, {
         method: 'DELETE',
       });
 
@@ -249,7 +249,7 @@ export default function AdminPage({ initialImages = [] }: AdminPageProps) {
         formData.append('file', fileToUpload);
 
         try {
-          const response = await fetch('/api/upload', {
+          const response = await fetch(`${router.basePath}/api/upload`, {
             method: 'POST',
             body: formData,
           });
