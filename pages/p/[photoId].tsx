@@ -7,7 +7,13 @@ import getBase64ImageUrl from "../../utils/generateBlurPlaceholder";
 import { imageUrl } from "../../utils/imageUrl";
 import type { ImageProps } from "../../utils/types";
 
-const PhotoPage: NextPage = ({ currentPhoto }: { currentPhoto: ImageProps }) => {
+const PhotoPage: NextPage = ({
+  currentPhoto,
+  images,
+}: {
+  currentPhoto: ImageProps;
+  images: ImageProps[];
+}) => {
   const currentPhotoUrl = imageUrl(currentPhoto, 2560);
 
   return (
@@ -22,7 +28,7 @@ const PhotoPage: NextPage = ({ currentPhoto }: { currentPhoto: ImageProps }) => 
         />
       </Head>
       <main className="mx-auto max-w-[1960px] p-4">
-        <Carousel currentPhoto={currentPhoto} />
+        <Carousel currentPhoto={currentPhoto} images={images} />
       </main>
     </>
   );
@@ -52,6 +58,10 @@ export const getStaticProps: GetStaticProps = async (context) => {
   return {
     props: {
       currentPhoto,
+      // The whole set travels with the page so a shared /p/ link is a full
+      // viewer rather than a dead end. Only the current photo carries a blur
+      // placeholder, so this stays cheap.
+      images,
     },
   };
 };

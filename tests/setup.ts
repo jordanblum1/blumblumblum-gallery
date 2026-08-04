@@ -7,6 +7,15 @@ if (typeof window !== "undefined") {
     Element.prototype.scrollIntoView = () => {};
   }
 
+  // Headless UI's Dialog observes its container; jsdom has no ResizeObserver.
+  if (!("ResizeObserver" in window)) {
+    window.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof window.ResizeObserver;
+  }
+
   if (!window.matchMedia) {
     window.matchMedia = ((query: string) => ({
       matches: false,
