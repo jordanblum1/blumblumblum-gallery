@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 export type ImageProps = {
   /* Stable per-photo index from the Cloudinary result set; used by /p/ links. */
   id: number;
