@@ -11,7 +11,8 @@ module.exports = {
   theme: {
     extend: {
       boxShadow: {
-        highlight: "inset 0 0 0 1px rgba(255, 255, 255, 0.05)",
+        // Inset hairline that defines a print's edge against the light paper.
+        highlight: "inset 0 0 0 1px rgba(43, 37, 33, 0.08)",
       },
       screens: {
         narrow: { raw: "(max-aspect-ratio: 3 / 2)" },

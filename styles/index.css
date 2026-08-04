@@ -2,17 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Brand tokens — darkroom values from the shared blum brand book
-   (blumblumblum.com data-darkroom palette + jordanrblum.com motion). */
+/* Brand tokens mirrored from jordanblum.com's tokens.css so the gallery reads
+   as the same site. Light-only, like the portfolio. */
 :root {
-  --paper: #160f0d;
-  --paper-raised: #241816;
-  --ink: #f7e8dc;
-  --ink-muted: #c9aea3;
-  --hairline: #5b3b34;
-  --accent: #e6533d;
-  --panel: rgb(36 24 22 / 0.94);
-  --veil: rgb(22 15 13 / 0.72);
+  color-scheme: only light;
+
+  --paper: #f7f3ed;
+  --paper-raised: #fcfaf6;
+  --ink: #2b2521;
+  --ink-muted: #746960;
+  --hairline: #ddd5cb;
+  --accent: #9c4037;
+  /* The warmer safelight orange stays for glows and selection, where the
+     brick accent reads muddy. */
+  --safelight: #e6533d;
+  --panel: rgb(252 250 246 / 0.94);
+  --veil: rgb(247 243 237 / 0.86);
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --duration-fast: 140ms;
   --duration-default: 220ms;
@@ -72,7 +77,8 @@ body {
 .intro-panel {
   background: var(--panel);
   outline: 1px solid var(--hairline);
-  box-shadow: 0 2px 3px rgb(0 0 0 / 0.3), 0 16px 42px rgb(0 0 0 / 0.4);
+  /* Portfolio shadow scale; the old near-black values crushed the light paper. */
+  box-shadow: 0 1px 2px rgb(43 37 33 / 0.08), 0 18px 50px rgb(43 37 33 / 0.14);
 }
 
 .intro-panel::before {
@@ -81,14 +87,14 @@ body {
   inset: 0;
   background: radial-gradient(
     120% 90% at 50% 0%,
-    rgb(230 83 61 / 0.14),
-    transparent 60%
+    rgb(230 83 61 / 0.1),
+    transparent 62%
   );
   pointer-events: none;
 }
 
 ::selection {
-  background: rgb(230 83 61 / 0.3);
+  background: rgb(230 83 61 / 0.24);
 }
 
 @media (prefers-reduced-motion: reduce) {

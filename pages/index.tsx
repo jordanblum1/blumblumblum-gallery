@@ -1,3 +1,4 @@
+import { ArrowsPointingOutIcon } from "@heroicons/react/24/outline";
 import type { NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
@@ -5,6 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef } from "react";
 import Modal from "../components/Modal";
+import BlumMark from "../components/BlumMark";
+import ScrollToTop from "../components/ScrollToTop";
 import cloudinary from "../utils/cloudinary";
 import getBase64ImageUrl from "../utils/generateBlurPlaceholder";
 import { imageUrl } from "../utils/imageUrl";
@@ -42,7 +45,7 @@ const Home: NextPage = ({
   return (
     <>
       <Head>
-        <title>Jordan Blum&apos;s Photo Gallery</title>
+        <title>Jordan Blum · Photos</title>
         <meta property="og:image" content={ogImage} />
         {/* The app also answers on its .vercel.app origin behind CloudFront,
             so point crawlers at the public URL regardless of which host served. */}
@@ -58,13 +61,15 @@ const Home: NextPage = ({
           />
         )}
         <div className="columns-1 gap-4 sm:columns-2 xl:columns-3 2xl:columns-4">
-          <div className="intro-panel after:content relative mb-5 flex h-[629px] flex-col items-center justify-end gap-5 overflow-hidden rounded-[1.5rem] px-6 pb-14 pt-64 text-center">
+          <div className="intro-panel after:content relative mb-5 flex h-[629px] flex-col items-center justify-end gap-5 overflow-hidden rounded-[1.5rem] px-6 pb-14 pt-56 text-center">
+            {/* Wordmark sits behind the portrait and fades upward into the panel. */}
+            <BlumMark className="pointer-events-none absolute inset-x-0 top-16 mx-auto h-40 w-[78%] text-[var(--accent)] opacity-[0.16] [mask-image:linear-gradient(to_top,black_70%,transparent)]" />
             <Image
               alt="Jordan Blum"
-              className="rounded-full outline outline-1 outline-[var(--hairline)]"
-              src="/jordan-headshot.jpg"
-              width={130}
-              height={130}
+              className="relative rounded-full outline outline-1 outline-[var(--hairline)]"
+              src="/jordan-portrait.webp"
+              width={150}
+              height={150}
               priority
             />
             <h1 className="text-2xl font-medium tracking-[-0.04em] text-[var(--ink)]">
@@ -81,7 +86,6 @@ const Home: NextPage = ({
               </a>
               .
             </p>
-            <p className="mono-meta">{images.length} frames · shuffled hourly</p>
           </div>
           {images.map(({ id, public_id, format, blurDataUrl }, displayIndex) => (
             <Link
@@ -93,10 +97,11 @@ const Home: NextPage = ({
               className="develop after:content group relative mb-5 block w-full cursor-zoom-in after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:shadow-highlight"
               style={{ transitionDelay: `${(displayIndex % 4) * 50}ms` }}
             >
+              {/* The lift lives on the image, not the link: .develop owns the
+                  link's transform for the reveal and the two would collide. */}
               <Image
                 alt={`Photograph by Jordan Blum, frame ${id + 1}`}
-                className="transform rounded-lg brightness-90 transition will-change-auto group-hover:brightness-110"
-                style={{ transform: "translate3d(0, 0, 0)" }}
+                className="rounded-lg brightness-[0.97] transition duration-[var(--duration-default)] ease-[var(--ease)] will-change-transform group-hover:-translate-y-0.5 group-hover:brightness-105 group-hover:drop-shadow-[0_10px_20px_rgba(43,37,33,0.22)] motion-reduce:transform-none motion-reduce:transition-none"
                 placeholder="blur"
                 blurDataURL={blurDataUrl}
                 src={imageUrl({ public_id, format }, 720)}
@@ -107,6 +112,10 @@ const Home: NextPage = ({
                   (max-width: 1536px) 33vw,
                   25vw"
               />
+              {/* Expand affordance; fades in with the hover lift. */}
+              <span className="pointer-events-none absolute right-3 top-3 rounded-full border border-[var(--hairline)] bg-[var(--panel)] p-1.5 text-[var(--ink)] opacity-0 backdrop-blur-lg transition-opacity duration-[var(--duration-fast)] group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none">
+                <ArrowsPointingOutIcon className="h-4 w-4" />
+              </span>
             </Link>
           ))}
         </div>
@@ -120,6 +129,7 @@ const Home: NextPage = ({
           blumblumblum.com
         </a>
       </footer>
+      <ScrollToTop />
     </>
   );
 };
