@@ -49,8 +49,12 @@ const variants = {
   }),
 };
 
-const chromeButton =
-  "rounded-full border border-[var(--hairline)] bg-[var(--panel)] p-2 text-[var(--ink-muted)] backdrop-blur-lg transition hover:border-[var(--ink-muted)] hover:text-[var(--ink)] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)]";
+const chromeBase =
+  "rounded-full border border-[var(--hairline)] bg-[var(--panel)] text-[var(--ink-muted)] backdrop-blur-lg transition hover:border-[var(--ink-muted)] hover:text-[var(--ink)] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)]";
+const chromeButton = `${chromeBase} p-2`;
+// Padding lives here rather than alongside chromeButton so the two never emit
+// competing p-* utilities. z-10 keeps arrows above the stacked frames.
+const arrowButton = `${chromeBase} absolute top-1/2 z-10 hidden -translate-y-1/2 p-3 sm:block`;
 
 export default function SharedModal({
   position,
@@ -138,45 +142,50 @@ export default function SharedModal({
         {/* Stage. The horizontal padding reserves the arrow gutters, so the
             photo can never sit underneath the controls. */}
         <div className="relative flex min-h-0 flex-1 items-center justify-center px-3 pb-2 sm:px-20">
-          <AnimatePresence initial={false} custom={direction} mode="popLayout">
-            <motion.div
-              key={currentImage.id}
-              custom={direction}
-              variants={variants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              className="flex h-full w-full items-center justify-center"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imageUrl(currentImage, 1280)}
-                srcSet={srcSet(currentImage)}
-                sizes={SIZES}
-                alt="Photograph by Jordan Blum"
-                width={currentImage.width}
-                height={currentImage.height}
-                fetchPriority="high"
-                decoding="async"
-                className="max-h-full w-auto max-w-full rounded-lg object-contain"
-                style={
-                  currentImage.blurDataUrl
-                    ? {
-                        backgroundImage: `url(${currentImage.blurDataUrl})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                      }
-                    : undefined
-                }
-              />
-            </motion.div>
-          </AnimatePresence>
+          {/* Frames stack absolutely inside this box. As flex siblings the
+              outgoing and incoming frames shared the row for a beat and each
+              collapsed to half width, which is what made stepping jump. */}
+          <div className="relative h-full w-full">
+            <AnimatePresence initial={false} custom={direction}>
+              <motion.div
+                key={currentImage.id}
+                custom={direction}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imageUrl(currentImage, 1280)}
+                  srcSet={srcSet(currentImage)}
+                  sizes={SIZES}
+                  alt="Photograph by Jordan Blum"
+                  width={currentImage.width}
+                  height={currentImage.height}
+                  fetchPriority="high"
+                  decoding="async"
+                  className="max-h-full w-auto max-w-full rounded-lg object-contain"
+                  style={
+                    currentImage.blurDataUrl
+                      ? {
+                          backgroundImage: `url(${currentImage.blurDataUrl})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }
+                      : undefined
+                  }
+                />
+              </motion.div>
+            </AnimatePresence>
+          </div>
 
           {navigation && (
             <>
               {!atStart && (
                 <button
-                  className={`absolute left-2 top-1/2 hidden -translate-y-1/2 p-3 sm:left-4 sm:block ${chromeButton}`}
+                  className={`${arrowButton} left-2 sm:left-4`}
                   onClick={() => goTo(position - 1)}
                   aria-label="Previous photo"
                 >
@@ -185,7 +194,7 @@ export default function SharedModal({
               )}
               {!atEnd && (
                 <button
-                  className={`absolute right-2 top-1/2 hidden -translate-y-1/2 p-3 sm:right-4 sm:block ${chromeButton}`}
+                  className={`${arrowButton} right-2 sm:right-4`}
                   onClick={() => goTo(position + 1)}
                   aria-label="Next photo"
                 >
