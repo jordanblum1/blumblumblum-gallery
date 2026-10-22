@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.ENABLE_SELF_HOSTED_RUNNER == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","macOS","ARM64","personal-mac"]') || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
 
