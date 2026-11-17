@@ -16,16 +16,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: pnpm
+          cache: ${{ runner.environment != 'self-hosted' && 'pnpm' || '' }}
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm lint
+      - name: Lint, typecheck, and test in parallel
+        shell: bash
+        run: |
+          pnpm lint & lint=$!
+          pnpm exec tsc --noEmit & types=$!
+          pnpm test & tests=$!
 
-      - name: Type check
-        run: pnpm exec tsc --noEmit
-
-      - name: Test
-        run: pnpm test
+          status=0
+          wait "$lint" || { echo "::error::Lint failed"; status=1; }
+          wait "$types" || { echo "::error::Typecheck failed"; status=1; }
+          wait "$tests" || { echo "::error::Tests failed"; status=1; }
+          exit "$status"
